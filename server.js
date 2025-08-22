@@ -1,5 +1,5 @@
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: process.env.PORT || 8080 }); // Render сам назначит порт
+const wss = new WebSocket.Server('https://celebrated-donut-c4da58.netlify.app'); // Render сам назначит порт
 
 // Хранилище для сообщений (в реальном приложении используйте БД)
 let messages = [];
