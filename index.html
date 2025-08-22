@@ -4,7 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мой Мессенджер</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Вставьте сюда всё содержимое вашего style.css */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+        }
+        /* ... остальные стили ... */
+        button:hover {
+            background-color: #0C6B58;
+        }
+    </style>
 </head>
 <body>
     <div class="chat-container">
@@ -22,29 +46,86 @@
             <button onclick="sendMessage()">Отправить</button>
         </div>
     </div>
-    <script src="script.js"></script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой Мессенджер</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="chat-container">
-        <!-- ... весь ваш HTML-код ... -->
-    </div>
 
     <script>
-    // Весь код из script.js вставьте прямо сюда
-    const socket = new WebSocket('wss://your-app-name.onrender.com');
-    // ... остальной JavaScript-код ...
-    function sendMessage() {
-        // код функции
-    }
+        // Вставьте сюда всё содержимое вашего script.js
+        // НЕ ЗАБУДЬТЕ ПОДСТАВИТЬ ВАШ REALNY URL!
+        const socket = new WebSocket('https://nexus-o4sw.onrender.com');
+        const chatBox = document.getElementById('chatBox');
+        const messageInput = document.getElementById('messageInput');
+        const usernameInput = document.getElementById('username');
+
+        // Обработчик открытия соединения
+        socket.onopen = function(event) {
+            console.log('✅ Соединение с сервером установлено');
+            addMessageToChat('Система', 'Вы подключились к чату.', 'system');
+        };
+
+        // Обработчик входящих сообщений от сервера
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'history') {
+                data.data.forEach(msg => {
+                    addMessageToChat(msg.user, msg.text, msg.user === usernameInput.value ? 'me' : 'other', msg.time);
+                });
+            } else if (data.type === 'message') {
+                const msg = data.data;
+                addMessageToChat(msg.user, msg.text, msg.user === usernameInput.value ? 'me' : 'other', msg.time);
+            }
+        };
+
+        // Обработчик ошибок
+        socket.onerror = function(error) {
+            console.error('❌ Ошибка WebSocket:', error);
+            addMessageToChat('Система', 'Произошла ошибка соединения.', 'system');
+        };
+
+        // Обработчик закрытия соединения
+        socket.onclose = function(event) {
+            console.log('🔌 Соединение закрыто', event);
+        };
+
+        // Функция для отправки сообщения
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
+            const user = usernameInput.value.trim() || 'Аноним';
+
+            if (messageText && socket.readyState === WebSocket.OPEN) {
+                const messageData = {
+                    user: user,
+                    text: messageText
+                };
+                socket.send(JSON.stringify(messageData));
+                messageInput.value = ''; // Очищаем поле ввода
+                console.log('Сообщение отправлено:', messageData);
+            } else {
+                console.log('Не удалось отправить. Состояние соединения:', socket.readyState);
+            }
+        }
+
+        // Отправка сообщения по нажатию Enter
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Вспомогательная функция для добавления сообщения в чат
+        function addMessageToChat(user, text, type, time = new Date().toLocaleTimeString()) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.classList.add(type === 'me' ? 'my-message' : 'other-message');
+
+            const messageHTML = `
+                <div>${text}</div>
+                <div class="message-info">${user}, ${time}</div>
+            `;
+            messageElement.innerHTML = messageHTML;
+            chatBox.appendChild(messageElement);
+            // Прокручиваем чат вниз к новому сообщению
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
     </script>
 </body>
 </html>
